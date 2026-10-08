@@ -3,16 +3,15 @@ import { IconPaperclip, IconSend, IconX, IconImage } from "./Icons";
 
 export default function ChatInput({ onSend, disabled }) {
   const [text, setText] = useState("");
-  const [file, setFile] = useState(null); // { preview, name, type }
+  const [file, setFile] = useState(null);
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Auto-resize textarea
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 140) + "px";
+    el.style.height = Math.min(el.scrollHeight, 120) + "px";
   }, [text]);
 
   const handlePickFile = () => fileInputRef.current?.click();
@@ -20,20 +19,55 @@ export default function ChatInput({ onSend, disabled }) {
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
     if (!f) return;
+
     if (!f.type.startsWith("image/")) {
       alert("Only images are supported right now.");
+      e.target.value = "";
       return;
     }
+
+    if (f.size > 10 * 1024 * 1024) {
+      alert("Image is too large (max 10 MB).");
+      e.target.value = "";
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
-      setFile({
-        preview: reader.result, // dataURL
-        name: f.name,
-        type: f.type,
-      });
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1024;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) {
+            height = Math.round((height * MAX) / width);
+            width = MAX;
+          } else {
+            width = Math.round((width * MAX) / height);
+            height = MAX;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressed = canvas.toDataURL("image/jpeg", 0.85);
+
+        setFile({
+          preview: compressed,
+          name: f.name,
+          type: "image/jpeg",
+        });
+      };
+      img.onerror = () => {
+        alert("Could not read that image. Try a different one.");
+      };
+      img.src = reader.result;
     };
     reader.readAsDataURL(f);
-    // reset so choosing the same file again still triggers
     e.target.value = "";
   };
 
@@ -55,6 +89,12 @@ export default function ChatInput({ onSend, disabled }) {
     }
   };
 
+  const handleFocus = (e) => {
+    setTimeout(() => {
+      e.target.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 250);
+  };
+
   const canSend = (text.trim().length > 0 || !!file) && !disabled;
 
   return (
@@ -62,7 +102,6 @@ export default function ChatInput({ onSend, disabled }) {
       onSubmit={handleSubmit}
       className="px-3 md:px-4 py-3 md:py-4 bg-[#FDF8F2]/90 backdrop-blur-xl border-t border-[#F0E4D6]"
     >
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -71,7 +110,6 @@ export default function ChatInput({ onSend, disabled }) {
         className="hidden"
       />
 
-      {/* Attachment preview */}
       {file && (
         <div className="mb-2.5 animate-fadeIn">
           <div className="relative inline-flex items-center gap-2.5 bg-white border border-[#F0E4D6] rounded-2xl p-1.5 pr-3 shadow-sm">
@@ -101,9 +139,7 @@ export default function ChatInput({ onSend, disabled }) {
         </div>
       )}
 
-      {/* Input row */}
       <div className="flex items-end gap-2 bg-white rounded-full border border-[#F0E4D6] shadow-sm focus-within:border-[#FFCC9E] focus-within:shadow-md focus-within:shadow-orange-500/10 transition-all pl-1.5 pr-1.5 py-1.5">
-        {/* Attach */}
         <button
           type="button"
           onClick={handlePickFile}
@@ -113,19 +149,18 @@ export default function ChatInput({ onSend, disabled }) {
           <IconPaperclip className="w-4 h-4" />
         </button>
 
-        {/* Textarea */}
         <textarea
           ref={textareaRef}
           rows={1}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           placeholder="Ask anything to learn..."
           disabled={disabled}
-          className="flex-1 min-w-0 bg-transparent text-sm md:text-[15px] outline-none text-[#2B1E14] placeholder:text-[#B4A08B] resize-none py-2 max-h-[140px] leading-relaxed disabled:opacity-50 scrollbar-thin"
+          className="flex-1 min-w-0 bg-transparent text-base md:text-[15px] outline-none text-[#2B1E14] placeholder:text-[#B4A08B] resize-none py-2 max-h-[120px] leading-relaxed disabled:opacity-50 scrollbar-thin"
         />
 
-        {/* Send */}
         <button
           type="submit"
           disabled={!canSend}
@@ -141,8 +176,15 @@ export default function ChatInput({ onSend, disabled }) {
       </div>
 
       <p className="hidden md:block text-[10px] text-[#B4A08B] text-center mt-2 select-none">
-        Press <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#F0E4D6] text-[#6B5844] font-sans">Enter</kbd> to send ·{" "}
-        <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#F0E4D6] text-[#6B5844] font-sans">Shift + Enter</kbd> for new line
+        Press{" "}
+        <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#F0E4D6] text-[#6B5844] font-sans">
+          Enter
+        </kbd>{" "}
+        to send ·{" "}
+        <kbd className="px-1.5 py-0.5 rounded bg-white border border-[#F0E4D6] text-[#6B5844] font-sans">
+          Shift + Enter
+        </kbd>{" "}
+        for new line
       </p>
     </form>
   );

@@ -38,26 +38,24 @@ const SYSTEM_INSTRUCTION = `You are AnamIQ, a warm, brief personal AI tutor for 
 - "quiz me" → one question at a time.
 
 # Length by question type
-- Greeting ("hi", "hello") → 1 line reply. e.g. "Hi! What would you like to learn today? 🎯"
+- Greeting ("hi", "hello") → 1 line reply.
 - Simple fact ("capital of France?") → 1 line. e.g. "Paris. 🇫🇷"
 - Definition ("what is X?") → 2–3 lines max.
-- "Why/How" question → short paragraph, only if truly needed.
 - Math → steps only, no commentary.
 - Code → code block + 1–2 line note.
 
 # Formatting (only when needed)
 - Use **bold** sparingly.
-- Use emojis lightly — 0–2 per reply, not on every line.
+- Use emojis lightly — 0–2 per reply.
 - Use math LaTeX when math is involved: inline $x^2$, block $$...$$
 - Use code fences with language tag: \`\`\`jsx ... \`\`\`
 
-# Code rules (when user asks for code)
+# Code rules
 - Wrap in fenced block with language.
-- Add brief comments only where non-obvious.
-- After code: 1–2 lines max explaining what it does. No essay.
+- After code: 1–2 lines max explanation.
 
-# Math rules (when user asks for math)
-- Step by step, but each step is ONE short line.
+# Math rules
+- Step by step, each step ONE short line.
 - Use LaTeX: $...$ inline, $$...$$ block.
 - Final answer in **bold** or $\\boxed{}$.
 
@@ -69,7 +67,7 @@ const SYSTEM_INSTRUCTION = `You are AnamIQ, a warm, brief personal AI tutor for 
   - B) ...
   - C) ...
   - D) ...
-- Wait for answer. Then reply with ✅ or ❌ + 1 line explanation.
+- Wait for answer. Then ✅ or ❌ + 1 line explanation.
 
 # Tone
 - Friendly but brief. Like a smart friend, not a textbook.
@@ -107,7 +105,7 @@ const ALLOWED_MIMES = [
   "image/heif",
 ];
 
-const MAX_IMAGE_BYTES = 3 * 1024 * 1024; // 3 MB
+const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 
 const MODEL_CANDIDATES = [
   "gemini-flash-latest",
@@ -138,6 +136,32 @@ export default function App() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  // Mobile keyboard — sync app height with visualViewport
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const updateHeight = () => {
+      if (window.innerWidth < 768) {
+        document.documentElement.style.setProperty(
+          "--app-height",
+          `${vv.height}px`
+        );
+      } else {
+        document.documentElement.style.removeProperty("--app-height");
+      }
+    };
+
+    updateHeight();
+    vv.addEventListener("resize", updateHeight);
+    vv.addEventListener("scroll", updateHeight);
+    return () => {
+      vv.removeEventListener("resize", updateHeight);
+      vv.removeEventListener("scroll", updateHeight);
+      document.documentElement.style.removeProperty("--app-height");
+    };
+  }, []);
 
   /* ---------- Gemini call ---------- */
 
@@ -387,7 +411,13 @@ export default function App() {
   /* ---------- render ---------- */
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-b from-[#FDF8F2] via-[#FCEEDC] to-[#FBE6CE] md:flex md:items-center md:justify-center md:p-6 relative">
+    <div
+      className="bg-gradient-to-b from-[#FDF8F2] via-[#FCEEDC] to-[#FBE6CE] md:flex md:items-center md:justify-center md:p-6 relative"
+      style={{
+        minHeight: "var(--app-height, 100dvh)",
+        height: "var(--app-height, 100dvh)",
+      }}
+    >
       <div
         className="absolute inset-0 pointer-events-none opacity-60"
         style={{
@@ -397,7 +427,10 @@ export default function App() {
         aria-hidden="true"
       />
 
-      <div className="relative w-full h-[100dvh] md:h-[88vh] md:max-w-lg bg-[#FFFDFA] md:rounded-[32px] md:border md:border-[#F0E4D6] md:shadow-2xl md:shadow-orange-900/5 flex flex-col overflow-hidden">
+      <div
+        className="relative w-full md:h-[88vh] md:max-w-lg bg-[#FFFDFA] md:rounded-[32px] md:border md:border-[#F0E4D6] md:shadow-2xl md:shadow-orange-900/5 flex flex-col overflow-hidden"
+        style={{ height: "var(--app-height, 100dvh)" }}
+      >
         <ChatHeader
           onNewChat={handleNewChat}
           onClearChat={handleClearChat}
@@ -469,7 +502,6 @@ function WelcomeScreen({ onSuggestion }) {
         ))}
       </div>
 
-      {/* Creator credit + social links */}
       <div className="mt-7 flex flex-col items-center gap-3">
         <p className="text-[11px] text-[#B4A08B] flex items-center gap-1 select-none">
           Made with
@@ -531,7 +563,6 @@ function AboutModal({ onClose }) {
         className="relative w-full max-w-sm bg-[#FFFDFA] rounded-[28px] border border-[#F0E4D6] shadow-2xl shadow-orange-900/20 p-6 text-center animate-fadeIn"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close */}
         <button
           type="button"
           onClick={onClose}
@@ -541,14 +572,12 @@ function AboutModal({ onClose }) {
           <IconX className="w-3.5 h-3.5" />
         </button>
 
-        {/* Mascot */}
         <div className="flex justify-center mb-2">
           <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#FFF1E0] to-[#FFE0C2] border border-[#F5DEC5] flex items-center justify-center overflow-hidden shadow-sm">
             <Mascot className="w-16 h-16" />
           </div>
         </div>
 
-        {/* Title + version */}
         <div className="flex items-center justify-center gap-2">
           <h2 className="font-cartoon font-semibold text-2xl text-[#2B1E14] leading-none">
             AnamIQ
@@ -563,10 +592,8 @@ function AboutModal({ onClose }) {
           personalized study support.
         </p>
 
-        {/* Divider */}
         <div className="my-5 h-px bg-[#F0E4D6]" />
 
-        {/* Creator */}
         <p className="text-[11px] text-[#B4A08B] flex items-center justify-center gap-1 select-none">
           Made with
           <IconHeart className="w-3 h-3 text-[#F4741B] inline" />
@@ -576,7 +603,6 @@ function AboutModal({ onClose }) {
           {CREATOR.name}
         </p>
 
-        {/* Socials */}
         <div className="flex items-center justify-center gap-2.5 mt-4">
           <a
             href={CREATOR.facebook}

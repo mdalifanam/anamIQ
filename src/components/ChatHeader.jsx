@@ -12,7 +12,6 @@ export default function ChatHeader({ onNewChat, onClearChat, onAbout }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
@@ -24,7 +23,6 @@ export default function ChatHeader({ onNewChat, onClearChat, onAbout }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => e.key === "Escape" && setOpen(false);
@@ -40,12 +38,10 @@ export default function ChatHeader({ onNewChat, onClearChat, onAbout }) {
 
   return (
     <header className="relative z-20 flex items-center gap-3 px-4 md:px-5 py-3.5 md:py-4 bg-[#FDF8F2]/90 backdrop-blur-xl border-b border-[#F0E4D6]">
-      {/* Logo */}
       <div className="relative shrink-0 w-10 h-10 md:w-11 md:h-11 rounded-2xl bg-gradient-to-br from-[#FFF1E0] to-[#FFE0C2] border border-[#F5DEC5] flex items-center justify-center overflow-hidden shadow-sm">
         <Mascot className="w-8 h-8 md:w-9 md:h-9" />
       </div>
 
-      {/* Title + version pill */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h1 className="font-cartoon font-semibold text-xl md:text-[22px] text-[#2B1E14] leading-none tracking-tight">
@@ -64,7 +60,6 @@ export default function ChatHeader({ onNewChat, onClearChat, onAbout }) {
         </p>
       </div>
 
-      {/* Menu */}
       <div className="relative" ref={menuRef}>
         <button
           type="button"
@@ -80,7 +75,6 @@ export default function ChatHeader({ onNewChat, onClearChat, onAbout }) {
           <IconMoreVertical className="w-4 h-4" />
         </button>
 
-        {/* Dropdown */}
         {open && (
           <div className="absolute right-0 top-[calc(100%+8px)] w-52 bg-white rounded-2xl border border-[#F0E4D6] shadow-xl shadow-orange-900/10 p-1.5 animate-fadeIn">
             <MenuItem

@@ -1,5 +1,3 @@
-// Now uses /mascot.png from the public folder.
-
 export function Mascot({ className = "w-32 h-32" }) {
   return (
     <img
